@@ -37,7 +37,7 @@ function inserirDadosNaPlanilha() {
     const linhasVazias = [];
 
     for (let i = 0; i < valoresIntervalo.length; i++) {
-      if (valoresIntervalo[i].every(cell => !cell)) { // Verifica se a linha está vazia
+      if (valoresIntervalo[i].every(cell => !cell)) {
         linhasVazias.push(i);
       }
     }
@@ -47,13 +47,26 @@ function inserirDadosNaPlanilha() {
       return;
     }
 
+    // Coleta os valores existentes na coluna "Descrição"
+    const valoresDescricaoExistentes = abaPrincipal.getRange(config.INTERVALO_DESCRICAO)
+      .getValues()
+      .flat()
+      .filter(cell => cell); // Filtra células vazias
+
+    // Combina os valores existentes com os novos valores
+    const valoresDescricaoNovos = dadosUnicos.map(row => row[0]).filter(String);
+    const todosValoresDescricao = [...new Set([...valoresDescricaoExistentes, ...valoresDescricaoNovos])]; // Remove duplicatas
+
+    // Atualiza o combo de Descrição ANTES de inserir os dados
+    atualizarMenuSuspenso(abaPrincipal, config.INTERVALO_DESCRICAO, todosValoresDescricao);
+
     // Limita a inserção ao número de linhas vazias disponíveis
     const dadosParaInserir = dadosUnicos.slice(0, linhasVazias.length).map((row, index) => [
-      row[0], // Descrição (qualquer valor)
-      row[1], // Categoria (deve estar no combo)
-      row[2].toString(), // Parcela (convertido para string)
-      row[3].toString(), // Preço (inserido como string)
-      `=C${linhasVazias[index] + 12}*D${linhasVazias[index] + 12}` // Total (fórmula)
+      row[0], // Descrição
+      row[1], // Categoria
+      row[2].toString(), // Parcela
+      row[3].toString(), // Preço
+      `=C${linhasVazias[index] + 12}*D${linhasVazias[index] + 12}` // Total
     ]);
 
     // Insere os dados nas linhas vazias
@@ -62,8 +75,8 @@ function inserirDadosNaPlanilha() {
       abaPrincipal.getRange(linha, 1, 1, 5).setValues([dadosParaInserir[i]]);
     }
 
-    // Aplica o combo fixo para o campo Categoria
-    const categoriasPermitidas = ["Internet", "Cartão", "Assinatura", "Alimentação", "Entretenimento", "Outros"];
+    // Define o combo fixo para Categoria
+    const categoriasPermitidas = ["Internet", "Saúde", "Assinatura", "Alimentação", "Entretenimento", "Outros"];
     atualizarMenuSuspenso(abaPrincipal, config.INTERVALO_CATEGORIA, categoriasPermitidas);
 
     Logger.log("Dados inseridos com sucesso!");
